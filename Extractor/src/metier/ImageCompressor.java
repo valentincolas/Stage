@@ -33,8 +33,8 @@ public class ImageCompressor {
                 RenderingHints.KEY_RENDERING,
                 RenderingHints.VALUE_RENDER_QUALITY);
 
-        RenderedOp resizedImage = JAI.create("SubsampleAverage", image, 0.4,
-                0.4, qualityHints);
+        RenderedOp resizedImage = JAI.create("SubsampleAverage", image, 0.15,
+                0.15, qualityHints);
 
         bis.close();
         

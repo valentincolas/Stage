@@ -126,7 +126,7 @@ public class Extractor {
 			outputStream = new FileOutputStream(imagePath + "." + pic1.suggestFileExtension());
 			outputStream.write(pic1.getContent());
 			outputStream.close();
-			if(pics.size() >= 5) {
+			if (pics.size() >= 5) {
 				imagePath = destination + "\\photos\\" + ref;
 				Picture pic2 = (Picture) pics.get(2);
 				outputStream = new FileOutputStream(imagePath + "." + pic2.suggestFileExtension());
@@ -134,7 +134,7 @@ public class Extractor {
 				outputStream.close();
 				ImageCompressor.compress(imagePath + "." + pic2.suggestFileExtension());
 			}
-			
+
 			doc.close();
 		} catch (Exception e) {
 			System.out.println(e);
@@ -172,15 +172,15 @@ public class Extractor {
 	public static void main(String[] args) {
 		DAO dao = new DAO();
 		if (args.length <= 1) {
-		List<Substrat> liste = AllDocInspector(args[0]);
-		for (Substrat substrat : liste) {
-			System.out.println(substrat);
-		}
+			List<Substrat> liste = AllDocInspector(args[0]);
+			for (Substrat substrat : liste) {
+				System.out.println(substrat);
+			}
 			dao.createAllSubstrats(liste);
 		} else {
-			List<Image> courbes =  getImages(args[0] + "\\courbes");
+			List<Image> courbes = getImages(args[0] + "\\courbes");
 			dao.createAllCourbes(courbes);
-			List<Image> photos =  getImages(args[0] + "\\photos");
+			List<Image> photos = getImages(args[0] + "\\photos");
 			dao.createAllPhotos(photos);
 		}
 //		Image c = fileToImage(new File("C:\\Users\\valen\\Desktop\\test\\doc\\images\\201809-561-CVB-121-1R.jpg"));
