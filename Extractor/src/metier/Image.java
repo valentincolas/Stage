@@ -1,17 +1,17 @@
 package metier;
 
-public class Courbe {
+public class Image {
 	private String reference;
 	private String blob;
 	
 	
 	
-	public Courbe() {
+	public Image() {
 		this.reference = null;
 		this.blob = null;
 	}
 	
-	public Courbe(String nom, String binaire) {
+	public Image(String nom, String binaire) {
 		this.reference = nom;
 		this.blob = binaire;
 	}

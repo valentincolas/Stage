@@ -120,12 +120,21 @@ public class Extractor {
 			HWPFDocument doc = new HWPFDocument(new FileInputStream(location));
 
 			List<Picture> pics = doc.getPicturesTable().getAllPictures();
-			Picture pic = (Picture) pics.get(0);
+			Picture pic1 = (Picture) pics.get(0);
 			FileOutputStream outputStream = null;
-			String imagePath = destination + "\\images\\" + ref;
-			outputStream = new FileOutputStream(imagePath + "." + pic.suggestFileExtension());
-			outputStream.write(pic.getContent());
+			String imagePath = destination + "\\courbes\\" + ref;
+			outputStream = new FileOutputStream(imagePath + "." + pic1.suggestFileExtension());
+			outputStream.write(pic1.getContent());
 			outputStream.close();
+			if(pics.size() >= 5) {
+				imagePath = destination + "\\photos\\" + ref;
+				Picture pic2 = (Picture) pics.get(2);
+				outputStream = new FileOutputStream(imagePath + "." + pic2.suggestFileExtension());
+				outputStream.write(pic2.getContent());
+				outputStream.close();
+				ImageCompressor.compress(imagePath + "." + pic2.suggestFileExtension());
+			}
+			
 			doc.close();
 		} catch (Exception e) {
 			System.out.println(e);
@@ -133,17 +142,17 @@ public class Extractor {
 
 	}
 
-	private static List<Courbe> getCourbes(String location) {
-		List<Courbe> liste = new ArrayList<Courbe>();
+	private static List<Image> getImages(String location) {
+		List<Image> liste = new ArrayList<Image>();
 		File repertoire = new File(location);
 		File[] files = repertoire.listFiles();
 		for (File file : files) {
-			liste.add(fileToCourbe(file));
+			liste.add(fileToImage(file));
 		}
 		return liste;
 	}
 
-	private static Courbe fileToCourbe(File file) {
+	private static Image fileToImage(File file) {
 		byte[] fileData = new byte[(int) file.length()];
 		FileInputStream in;
 		try {
@@ -157,25 +166,27 @@ public class Extractor {
 		for (byte b : fileData) {
 			binaire += Integer.toBinaryString((b & 0xFF) + 0x100).substring(1);
 		}
-		return new Courbe(file.getName().substring(0, file.getName().length() - 4), binaire);
+		return new Image(file.getName().substring(0, file.getName().length() - 4), binaire);
 	}
 
 	public static void main(String[] args) {
 		DAO dao = new DAO();
 		if (args.length <= 1) {
-		List<Substrat> liste = AllDocInspector("C:\\Users\\valen\\Desktop\\test\\doc\\");
+		List<Substrat> liste = AllDocInspector(args[0]);
 		for (Substrat substrat : liste) {
 			System.out.println(substrat);
 		}
 			dao.createAllSubstrats(liste);
 		} else {
-			List<Courbe> liste = getCourbes(args[0]);
-			dao.createAllCourbes(liste);
+			List<Image> courbes =  getImages(args[0] + "\\courbes");
+			dao.createAllCourbes(courbes);
+			List<Image> photos =  getImages(args[0] + "\\photos");
+			dao.createAllPhotos(photos);
 		}
-		Courbe c = fileToCourbe(new File("C:\\Users\\valen\\Desktop\\test\\doc\\images\\201809-561-CVB-121-1R.jpg"));
-//		Courbe c = new Courbe("201809-561-CVB-121-1R", "101010101010");
-		System.out.println(c.getBlob().length());
-		dao.createCourbe(c);
+//		Image c = fileToImage(new File("C:\\Users\\valen\\Desktop\\test\\doc\\images\\201809-561-CVB-121-1R.jpg"));
+////		Courbe c = new Courbe("201809-561-CVB-121-1R", "101010101010");
+//		System.out.println(c.getBlob().length());
+//		dao.createCourbe(c);
 	}
 
 }

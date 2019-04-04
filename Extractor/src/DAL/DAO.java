@@ -3,17 +3,16 @@ package DAL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import metier.Courbe;
+import metier.Image;
 import metier.Substrat;
 
 public class DAO {
 	private Connection cn;
 	private PreparedStatement ps;
-	private ResultSet rs;
+
 
 	public DAO() {
 		
@@ -67,13 +66,13 @@ public class DAO {
 		}
 	}
 	
-	public void createAllCourbes(List<Courbe> liste) {
-		for (Courbe courbe : liste) {
+	public void createAllCourbes(List<Image> liste) {
+		for (Image courbe : liste) {
 			createCourbe(courbe);
 		}
 	}
 
-	public void createCourbe(Courbe courbe) {
+	public void createCourbe(Image courbe) {
 		try {
 			ps = cn.prepareStatement("Insert into Courbes(img_reference, img_type, img_blob) values(?, 'jpg', ?)");
 			ps.setString(1, courbe.getReference());
@@ -84,5 +83,23 @@ public class DAO {
 			e.printStackTrace();
 		}
 		
+	}
+
+	public void createAllPhotos(List<Image> photos) {
+		for (Image photo : photos) {
+			createPhoto(photo);
+		}
+	}
+
+	private void createPhoto(Image photo) {
+		try {
+			ps = cn.prepareStatement("Insert into Photos(img_reference, img_type, img_blob) values(?, 'jpg', ?)");
+			ps.setString(1, photo.getReference());
+			ps.setString(2, photo.getBlob());
+			ps.execute();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }
