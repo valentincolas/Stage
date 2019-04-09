@@ -16,7 +16,7 @@ import com.sun.media.jai.codec.SeekableStream;
 
 public class ImageCompressor {
     
-	public static void compress(String location) throws IOException {
+	public static void compress(String location, double ratio) throws IOException {
         File infile = new File(location);
         File outfile = new File(location);
 
@@ -33,8 +33,8 @@ public class ImageCompressor {
                 RenderingHints.KEY_RENDERING,
                 RenderingHints.VALUE_RENDER_QUALITY);
 
-        RenderedOp resizedImage = JAI.create("SubsampleAverage", image, 0.15,
-                0.15, qualityHints);
+        RenderedOp resizedImage = JAI.create("SubsampleAverage", image, ratio,
+        		ratio, qualityHints);
 
         bis.close();
         
@@ -44,6 +44,19 @@ public class ImageCompressor {
         JAI.create("encode", resizedImage, bos, "JPEG", null);
 
     }
+	
+	public static void compressAll(String location, double ratio) {
+		File repertoire = new File(location);
+		File[] files = repertoire.listFiles();
+		for (File file : files) {
+			try {
+				compress(file.getAbsolutePath(), ratio);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
 
   
 }
