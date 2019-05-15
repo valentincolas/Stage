@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 
-import metier.Image;
 import metier.Substrat;
 
 public class DAO {
@@ -18,7 +17,7 @@ public class DAO {
 		
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			this.cn = DriverManager.getConnection("jdbc:mysql://localhost:3306/Stage?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "password");
+			this.cn = DriverManager.getConnection("jdbc:mysql://localhost:3306/stage?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
 		} catch (ClassNotFoundException e) {
 			System.out.println("Driver introuvable");
 			e.printStackTrace();
@@ -45,13 +44,13 @@ public class DAO {
 			ps.setDouble(3, s.getMs());
 			ps.setDouble(4, s.getMv());
 			ps.setDouble(5, s.getRatioMsMv());
-			ps.setDouble(6, s.getPhosophore());
-			ps.setDouble(7, s.getPotassium());
-			ps.setDouble(8, s.getAzoteK());
-			ps.setDouble(9, s.getAzoteA());
+			ps.setString(6, s.getPhosphore());
+			ps.setString(7, s.getPotassium());
+			ps.setString(8, s.getAzoteK());
+			ps.setString(9, s.getAzoteA());
 			ps.setDouble(10, s.getBmpMV());
 			ps.setDouble(11, s.getBmpMF());
-			ps.setDouble(12, s.getPourcentageMethane());
+			ps.setString(12, s.getPourcentageMethane());
 			ps.execute();
 			return true;
 		} catch (SQLException e) {
@@ -66,40 +65,5 @@ public class DAO {
 		}
 	}
 	
-	public void createAllCourbes(List<Image> liste) {
-		for (Image courbe : liste) {
-			createCourbe(courbe);
-		}
-	}
-
-	public void createCourbe(Image courbe) {
-		try {
-			ps = cn.prepareStatement("Insert into Courbes(img_reference, img_type, img_blob) values(?, 'jpg', ?)");
-			ps.setString(1, courbe.getReference());
-			ps.setString(2, courbe.getBlob());
-			ps.execute();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-	}
-
-	public void createAllPhotos(List<Image> photos) {
-		for (Image photo : photos) {
-			createPhoto(photo);
-		}
-	}
-
-	private void createPhoto(Image photo) {
-		try {
-			ps = cn.prepareStatement("Insert into Photos(img_reference, img_type, img_blob) values(?, 'jpg', ?)");
-			ps.setString(1, photo.getReference());
-			ps.setString(2, photo.getBlob());
-			ps.execute();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+	
 }

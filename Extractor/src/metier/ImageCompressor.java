@@ -13,9 +13,21 @@ import javax.media.jai.OpImage;
 import javax.media.jai.RenderedOp;
 
 import com.sun.media.jai.codec.SeekableStream;
-
+/**
+ * <b> Cette classe permet de compresser des images jpg </b>
+ * @author COLAS Valentin
+ * @version 1.0
+ */
 public class ImageCompressor {
     
+	/**
+	 * 
+	 * @param location
+	 * L'adresse de l'image à compresser
+	 * @param ratio
+	 * Le niveau de compression souhaité 
+	 * @throws IOException
+	 */
 	public static void compress(String location, double ratio) throws IOException {
         File infile = new File(location);
         File outfile = new File(location);
@@ -45,6 +57,13 @@ public class ImageCompressor {
 
     }
 	
+	/**
+	 * 
+	 * @param location
+	 * L'adresse du dossier contenant les images à compresser
+	 * @param ratio
+	 * Le niveau de compression souhaité 
+	 */
 	public static void compressAll(String location, double ratio) {
 		File repertoire = new File(location);
 		File[] files = repertoire.listFiles();

@@ -6,11 +6,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.extractor.POITextExtractor;
@@ -23,15 +21,47 @@ import org.apache.xmlbeans.XmlException;
 
 import DAL.DAO;
 
+/**
+ *  <b>Extractor est la classe qui permet d'extraire et d'enregistrer en base les données relatives aux substrats </b>
+ *  <p>
+ *  Cette classe permet d'extraire les informations suivantes :
+ *  <ul>
+ *  <li>Le nom</li>
+ *  <li>La référence</li>
+ *  <li>Le pourcentage de matière sèche</li>
+ *  <li>Le pourcentage de matière volatile</li>
+ *  <li>Le ratio matière sèche / matière volatile</li>
+ *  <li>La contenance de potassium</li>
+ *  <li>La contenance de phosphore</li>
+ *  <li>La contenance d'azote ammoniacal</li>
+ *  <li>La contenance d'azote kjeldahl</li>
+ *  <li>Le bmp de la matière volatile</li>
+ *  <li>Le bmp de la matière fraîche</li>
+ *  <li>Le pourcentage de méthane parmis les gaz émis</li>
+ *  </ul>
+ *  </p>
+ *  
+ *  @author COLAS Valentin
+ *  @version 1.0
+ */
+
 public class Extractor {
 
-	/*
-	 * Données : chemin d'accès vers un fichier .doc Résultat : Retourne un objet
-	 * Substrat contenant les informations utiles pour la BDD
+	
+	
+	/**
+	 * L'adresse de destination des images et photos extraites
 	 */
-
 	private static String destination;
-
+	
+	
+	/**
+	 * 
+	 * @param location
+	 * 		L'adresse à laquelle ce trouve le document a inspecter
+	 * @return Un objet Substrat contenant les informations extraites
+	 * @see Substrat
+	 */
 	public static Substrat inspectDoc(String location) {
 		String text = "";
 		File f = new File(location);
@@ -44,22 +74,26 @@ public class Extractor {
 			e.printStackTrace();
 		}
 
-		Substrat substrat = getTextualInfos(text);
+		Substrat substrat = getInfosFromText(text);
 		extractImage(location, substrat.getReference());
 
 		return substrat;
 	}
-
-	private static Substrat getTextualInfos(String text) {
+	
+	
+	/**
+	 * 
+	 * @param text
+	 * 		Le texte complet d'un ficher Bmp 
+	 * @return Un objet Substrat contenant les informations extraites
+	 * @see Substrat
+	 */
+	private static Substrat getInfosFromText(String text) {
 		Substrat substrat = new Substrat();
-
-		String nom1 = StringUtils.substringBetween(text, "Prétraitement / Préparation :", "-");
-		String nom2 = StringUtils.substringBetween(text, "Prétraitement / Préparation :" + nom1 + "-", "-");
-		String nom3 = StringUtils.substringBetween(text, "Prétraitement / Préparation :" + nom1 + "-" + nom2 + "-",
-				"--");
-		if (nom3 != null) {
-			nom3 = nom3.substring(4);
-			substrat.setNom(nom3);
+		
+		String nom = extractRegex(text, "Préparation :	([0-9]+-[0-9]+(-[0-9]+)?)?(.+?)-(-)?[0-9]+\\/[0-9]+\\/[0-9]+", 3);
+		if (nom != null) {
+			substrat.setNom(nom.trim());
 		} else {
 			substrat.setNom("erreur");
 		}
@@ -89,33 +123,39 @@ public class Extractor {
 			substrat.setRatioMsMv(-1);
 		}
 
-		String phosphore = StringUtils.substringBetween(text, "Phosphore total (P2O5)", "g.kg-1");
-		if (phosphore != null && !phosphore.trim().isEmpty()) {
-			substrat.setPhosophore(Double.parseDouble(phosphore.replace(',', '.').replaceAll("<", "")));
+		
+		String phosphore = extractRegex(text, "Phosphore total \\(P2O5\\)(.+)?\\.kg-1", 1);
+		if (phosphore != null) {
+			substrat.setPhosphore(phosphore.trim());
 		} else {
-			substrat.setPhosophore(-1);
+			substrat.setPhosphore("-1");
+		}
+		
+
+		
+		String potassium = extractRegex(text, "Potassium total \\(K2O\\)(.+)?\\.kg-1", 1);
+		if (phosphore != null) {
+			substrat.setPotassium(potassium.trim());
+		} else {
+			substrat.setPotassium("-1");
 		}
 
-		String potassium = StringUtils.substringBetween(text, "Potassium total (K2O)", "g.kg-1");
-		if (potassium != null  && !potassium.trim().isEmpty()) {
-			substrat.setPotassium(Double.parseDouble(potassium.replace(',', '.').replaceAll("<", "")));
+
+		String azoteK = extractRegex(text, "Azote total Kjeldahl \\(NTK\\)(.+)?\\.kg-1", 1);
+		if (azoteK != null) {
+			substrat.setAzoteK(azoteK.trim());
 		} else {
-			substrat.setPotassium(-1);
+			substrat.setAzoteK("-1");
 		}
 
-		String azoteK = StringUtils.substringBetween(text, "Azote total Kjeldahl (NTK)", "gN.kg-1");
-		if (azoteK != null  && !azoteK.trim().isEmpty()) {
-			substrat.setAzoteK(Double.parseDouble(azoteK.replace(',', '.').replaceAll("<", "")));
+
+		String azoteA = extractRegex(text, "Azote ammoniacal \\(NH4\\+\\)(.+)?\\.kg-1", 1);
+		if (azoteA != null) {
+			substrat.setAzoteA(azoteA.trim());
 		} else {
-			substrat.setAzoteK(-1);
+			substrat.setAzoteA("-1");
 		}
 
-		String azoteA = StringUtils.substringBetween(text, "Azote ammoniacal (NH4+)", "gN.kg-1");
-		if (azoteA != null  && !azoteA.trim().isEmpty()) {
-			substrat.setAzoteA(Double.parseDouble(azoteA.replace(',', '.').replaceAll("<", "")));
-		} else {
-			substrat.setAzoteA(-1);
-		}
 
 		String bmpMV = StringUtils.substringBetween(text, "Potentiel Méthanogène(2)", "NLCH4.kgMV-1");
 		if (bmpMV != null) {
@@ -131,17 +171,45 @@ public class Extractor {
 			substrat.setBmpMF(-1);
 		}
 
-		String pctage = StringUtils.substringBetween(text, "CH4 (% vol.)", "%	\r\n" + "	H2S (% vol.)	");
+//		CH4 \(% vol\.\)	(.+%?)(.+%?)	(.+%?)
+		String pctage = extractRegex(text, "CH4 \\(% vol\\.\\)	(.+%?)(.+%?)	(.+%?)", 3);
 		if (pctage != null) {
-			String[] pctageArray = pctage.split("	");
-			substrat.setPourcentageMethane(Double.parseDouble(pctageArray[3].replace(',', '.')));
+			substrat.setPourcentageMethane(pctage.replaceAll("%", ""));
 		} else {
-			substrat.setPourcentageMethane(-1);
+			substrat.setPourcentageMethane("-1");
 		}
+		
+		
 
 		return substrat;
 	}
 
+	/**
+	 * 
+	 * @param text
+	 * 		Le texte contenant l'information devant être extraite
+	 * @param regex
+	 * 		L'expression régulière premetant de retrouver une information
+	 * @param i
+	 * 		L'index du groupe de regex à extraire
+	 * @return La chaîne de caractères qui correspond au groupe d'indice i de l'expression régulière
+	 */
+	private static String extractRegex(String text, String regex, int i) {
+		final Pattern pattern = Pattern.compile(regex);
+		final Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+        	return matcher.group(i);
+        }else {
+        	return null;
+        }
+	}
+
+	/**
+	 * 
+	 * @param location
+	 * 		L'adresse du dossier que l'on souhaite inspecter
+	 * @return Une liste contenant des objets de type Substrat contenant toutes les informations extraites à partie du dossier renseigné dans location
+	 */
 	public static List<Substrat> AllDocInspector(String location) {
 		destination = location;
 		List<Substrat> liste = new ArrayList<Substrat>();
@@ -155,26 +223,40 @@ public class Extractor {
 		return liste;
 	}
 
+	/**
+	 * 
+	 * @param location
+	 * 		L'adresse du fichier substrat contenant les images à extraire
+	 * @param ref
+	 * 		La référence du substrat 
+	 * 
+	 */
 	public static void extractImage(String location, String ref) {
 
 		try {
+			String imagePath;
 			HWPFDocument doc = new HWPFDocument(new FileInputStream(location));
-
 			List<Picture> pics = doc.getPicturesTable().getAllPictures();
 			Picture pic1 = (Picture) pics.get(0);
 			FileOutputStream outputStream = null;
-			String imagePath = destination + "\\courbes\\" + ref;
+			
+			if(pic1.suggestFileExtension().equals("emf")) {
+				imagePath = destination + "\\courbes\\" + ref;
+			} else {
+				imagePath = destination + "\\photos\\" + ref;
+			}
+			
 			outputStream = new FileOutputStream(imagePath + "." + pic1.suggestFileExtension());
 			outputStream.write(pic1.getContent());
 			outputStream.close();
 			
-			if (pics.size() >= 5) {
+			if (pics.size() > 5) {
 				imagePath = destination + "\\photos\\" + ref;
 				Picture pic2 = (Picture) pics.get(2);
 				outputStream = new FileOutputStream(imagePath + "." + pic2.suggestFileExtension());
 				outputStream.write(pic2.getContent());
 				outputStream.close();
-				ImageCompressor.compress(imagePath + "." + pic2.suggestFileExtension(), 0.15);
+//				ImageCompressor.compress(imagePath + "." + pic2.suggestFileExtension(), 0.15);
 			}
 			doc.close();
 		} catch (Exception e) {
@@ -183,62 +265,24 @@ public class Extractor {
 
 	}
 
-	private static List<Image> getImages(String location) {
-		ExecutorService es = Executors.newFixedThreadPool(8);
-		List<Image> liste = new ArrayList<Image>();
-		List<FileToImage> callables = new ArrayList<FileToImage>();
-		File repertoire = new File(location);
-		File[] files = repertoire.listFiles();
-		for (File file : files) {
-			callables.add(new FileToImage(file));
-		}
-		try {
-			List<Future<Image>> futures = es.invokeAll(callables);
-			es.shutdown();
-			es.awaitTermination(1, TimeUnit.HOURS);
-			
-			for (Future<Image> future : futures) {
-				liste.add(future.get());
-			}
-		} catch (InterruptedException | ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return liste;
-	}
-
-//	private static Image fileToImage(File file) {
-//		byte[] fileData = new byte[(int) file.length()];
-//		FileInputStream in;
-//		try {
-//			in = new FileInputStream(file);
-//			in.read(fileData);
-//			in.close();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//		String binaire = "";
-//		for (byte b : fileData) {
-//			binaire += Integer.toBinaryString((b & 0xFF) + 0x100).substring(1);
-//		}
-//		return new Image(file.getName().substring(0, file.getName().length() - 4), binaire);
-//	}
-
+	/**
+	 * 
+	 * @param args
+	 * 		Contient l'adresse du dossier contenant les documents à inspecter
+	 */
 	public static void main(String[] args) {
 		DAO dao = new DAO();
-////		if (args.length <= 1) {
-//		List<Substrat> liste = AllDocInspector("C:\\Users\\valen\\Desktop\\test\\doc");
-//		for (Substrat substrat : liste) {
-//			System.out.println(substrat);
-//		}
-//		dao.createAllSubstrats(liste);
-//		} else {
-			ImageCompressor.compressAll("C:\\Users\\valen\\Desktop\\test\\doc" + "\\courbes", 0.65);
-			List<Image> courbes = getImages("C:\\Users\\valen\\Desktop\\test\\doc" + "\\courbes");
-			dao.createAllCourbes(courbes);
-			List<Image> photos = getImages("C:\\Users\\valen\\Desktop\\test\\doc" + "\\photos");
-			dao.createAllPhotos(photos);
-//		}
+		ImageCompressor.compressAll("C:\\Users\\valen\\Desktop\\test\\doc" + "\\photos", 0.15);
+		if (args.length <= 1) {
+		List<Substrat> liste = AllDocInspector("C:\\Users\\valen\\Desktop\\test\\doc");
+		for (Substrat substrat : liste) {
+			System.out.println(substrat);
+		}
+		dao.createAllSubstrats(liste);
+		} else {
+			ImageCompressor.compressAll("C:\\Users\\valen\\Desktop\\test\\doc" + "\\courbes", 0.55);
+			
+		}
 //		Image c = fileToImage(new File("C:\\Users\\valen\\Desktop\\test\\doc\\images\\201809-561-CVB-121-1R.jpg"));
 ////		Courbe c = new Courbe("201809-561-CVB-121-1R", "101010101010");
 //		System.out.println(c.getBlob().length());
