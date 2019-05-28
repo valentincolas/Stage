@@ -19,6 +19,8 @@ import org.apache.poi.ooxml.extractor.ExtractorFactory;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.xmlbeans.XmlException;
 
+import com.profesorfalken.jpowershell.PowerShell;
+
 import DAL.DAO;
 
 /**
@@ -52,14 +54,13 @@ public class Extractor {
 	/**
 	 * L'adresse de destination des images et photos extraites
 	 */
-	private static String destination;
 	
 	
 	/**
 	 * 
 	 * @param location
-	 * 		L'adresse à laquelle ce trouve le document a inspecter
-	 * @return Un objet Substrat contenant les informations extraites
+	 * 		L'adresse à laquelle ce trouve le fichier a inspecter
+	 * @return Un objet Substrat contenant les informations extraites à partir de l'adresse du fichier passé en paramètre
 	 * @see Substrat
 	 */
 	public static Substrat inspectDoc(String location) {
@@ -67,6 +68,7 @@ public class Extractor {
 		File f = new File(location);
 		try {
 			POITextExtractor textExtractor = ExtractorFactory.createExtractor(f);
+
 			WordExtractor wordExtractor = (WordExtractor) textExtractor;
 			text = wordExtractor.getText();
 //			System.out.println(text);
@@ -84,8 +86,8 @@ public class Extractor {
 	/**
 	 * 
 	 * @param text
-	 * 		Le texte complet d'un ficher Bmp 
-	 * @return Un objet Substrat contenant les informations extraites
+	 * 		Le texte contenu dans un fichier Substrat
+	 * @return Un objet Substrat contenant les informations extraites à partir du texte issu d'un fichier Substrat
 	 * @see Substrat
 	 */
 	private static Substrat getInfosFromText(String text) {
@@ -171,7 +173,6 @@ public class Extractor {
 			substrat.setBmpMF(-1);
 		}
 
-//		CH4 \(% vol\.\)	(.+%?)(.+%?)	(.+%?)
 		String pctage = extractRegex(text, "CH4 \\(% vol\\.\\)	(.+%?)(.+%?)	(.+%?)", 3);
 		if (pctage != null) {
 			substrat.setPourcentageMethane(pctage.replaceAll("%", ""));
@@ -189,10 +190,10 @@ public class Extractor {
 	 * @param text
 	 * 		Le texte contenant l'information devant être extraite
 	 * @param regex
-	 * 		L'expression régulière premetant de retrouver une information
+	 * 		L'expression régulière premetant de retrouver l'information que l'on souhaite extraire
 	 * @param i
 	 * 		L'index du groupe de regex à extraire
-	 * @return La chaîne de caractères qui correspond au groupe d'indice i de l'expression régulière
+	 * @return La chaîne de caractères qui correspond au groupe d'indice i de l'expression régulière trouvée dans le texte
 	 */
 	private static String extractRegex(String text, String regex, int i) {
 		final Pattern pattern = Pattern.compile(regex);
@@ -208,12 +209,12 @@ public class Extractor {
 	 * 
 	 * @param location
 	 * 		L'adresse du dossier que l'on souhaite inspecter
-	 * @return Une liste contenant des objets de type Substrat contenant toutes les informations extraites à partie du dossier renseigné dans location
+	 * @return Une liste contenant des objets de type Substrat contenant toutes les informations extraites à partir du dossier renseigné dans location
 	 */
-	public static List<Substrat> AllDocInspector(String location) {
-		destination = location;
+	public static List<Substrat> allDocInspector(String location) {
+		
 		List<Substrat> liste = new ArrayList<Substrat>();
-		File repertoire = new File(destination);
+		File repertoire = new File(location);
 		File[] files = repertoire.listFiles();
 		for (File file : files) {
 			if (!file.isDirectory()) {
@@ -234,6 +235,7 @@ public class Extractor {
 	public static void extractImage(String location, String ref) {
 
 		try {
+			String destination = location.substring(0, location.lastIndexOf("\\"));
 			String imagePath;
 			HWPFDocument doc = new HWPFDocument(new FileInputStream(location));
 			List<Picture> pics = doc.getPicturesTable().getAllPictures();
@@ -256,13 +258,24 @@ public class Extractor {
 				outputStream = new FileOutputStream(imagePath + "." + pic2.suggestFileExtension());
 				outputStream.write(pic2.getContent());
 				outputStream.close();
-//				ImageCompressor.compress(imagePath + "." + pic2.suggestFileExtension(), 0.15);
 			}
 			doc.close();
 		} catch (Exception e) {
 			System.out.println(e);
 		}
 
+	}
+	
+	private static void compressImages(String arg) {
+		ImageCompressor.compressAll(arg + "\\courbes");
+		ImageCompressor.compressAll(arg + "\\photos");
+	}
+
+
+	public static void convertImages(String arg) {
+		PowerShell powerShell = PowerShell.openSession();
+		System.out.println(powerShell.executeScript("scripts/convertImages.ps1", arg ).getCommandOutput());
+		powerShell.close();
 	}
 
 	/**
@@ -271,22 +284,24 @@ public class Extractor {
 	 * 		Contient l'adresse du dossier contenant les documents à inspecter
 	 */
 	public static void main(String[] args) {
-		DAO dao = new DAO();
-		ImageCompressor.compressAll("C:\\Users\\valen\\Desktop\\test\\doc" + "\\photos", 0.15);
-		if (args.length <= 1) {
-		List<Substrat> liste = AllDocInspector("C:\\Users\\valen\\Desktop\\test\\doc");
+
+//		DAO dao = new DAO();
+
+		List<Substrat> liste = allDocInspector(args[0]);
+		
 		for (Substrat substrat : liste) {
 			System.out.println(substrat);
 		}
-		dao.createAllSubstrats(liste);
-		} else {
-			ImageCompressor.compressAll("C:\\Users\\valen\\Desktop\\test\\doc" + "\\courbes", 0.55);
-			
-		}
-//		Image c = fileToImage(new File("C:\\Users\\valen\\Desktop\\test\\doc\\images\\201809-561-CVB-121-1R.jpg"));
-////		Courbe c = new Courbe("201809-561-CVB-121-1R", "101010101010");
-//		System.out.println(c.getBlob().length());
-//		dao.createCourbe(c);
+		
+//		dao.createAllSubstrats(liste);
+//		
+		convertImages(args[0]);
+		
+		compressImages(args[0]);
+
 	}
+
+
+	
 
 }

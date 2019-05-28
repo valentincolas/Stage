@@ -2,7 +2,7 @@ package metier;
 
 
 /**
- * <b>Cette classe permet de stocker les informations relatives à un substrat dans un objet Substrat<b>
+ * <b>Cette classe permet de stocker les informations relatives à un substrat dans un objet Substrat</b>
  * @author COLAS Valentin
  * @version 1.0
  */
@@ -103,7 +103,7 @@ public class Substrat {
 		this.bmpMV = bmpMV;
 		this.bmpMF = bmpMF;
 		this.setPourcentageMethane(pctageMethane);
-		this.detail = -1;
+		this.detail = 0;
 	}
 	
 	
@@ -319,8 +319,8 @@ public class Substrat {
 	 * @param pourcentage
 	 * Le pourcentage de méthane parmi les gaz émis à affecter
 	 */
-	public void setPourcentageMethane(String pourentage) {
-		this.pourcentageMethane = pourentage;
+	public void setPourcentageMethane(String pourcentage) {
+		this.pourcentageMethane = pourcentage;
 	}
 	
 	

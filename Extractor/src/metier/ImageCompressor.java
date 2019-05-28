@@ -24,54 +24,71 @@ public class ImageCompressor {
 	 * 
 	 * @param location
 	 * L'adresse de l'image à compresser
-	 * @param ratio
-	 * Le niveau de compression souhaité 
 	 * @throws IOException
 	 */
-	public static void compress(String location, double ratio) throws IOException {
+	public static void compress(String location) throws IOException {
         File infile = new File(location);
         File outfile = new File(location);
-
-        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(
-                infile));
-       
-
-        SeekableStream s = SeekableStream.wrapInputStream(bis, true);
-
-        RenderedOp image = JAI.create("stream", s);
-        ((OpImage) image.getRendering()).setTileCache(null);
-
-        RenderingHints qualityHints = new RenderingHints(
-                RenderingHints.KEY_RENDERING,
-                RenderingHints.VALUE_RENDER_QUALITY);
-
-        RenderedOp resizedImage = JAI.create("SubsampleAverage", image, ratio,
-        		ratio, qualityHints);
-
-        bis.close();
         
-        BufferedOutputStream bos = new BufferedOutputStream(
-                new FileOutputStream(outfile));
+        double startSize = infile.length()/1024;
+        System.out.println(startSize);
+        double finalSize = 100;
         
-        JAI.create("encode", resizedImage, bos, "JPEG", null);
+        double ratio = computeRatio(startSize, finalSize);
+        
+        System.out.println(ratio);
+        
+        if(startSize >=  2 * finalSize) {
+        	BufferedInputStream bis = new BufferedInputStream(new FileInputStream(
+                    infile));
+           
+
+            SeekableStream s = SeekableStream.wrapInputStream(bis, true);
+
+            RenderedOp image = JAI.create("stream", s);
+            ((OpImage) image.getRendering()).setTileCache(null);
+
+            RenderingHints qualityHints = new RenderingHints(
+                    RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+
+            RenderedOp resizedImage = JAI.create("SubsampleAverage", image, ratio,
+            		ratio, qualityHints);
+
+            bis.close();
+            
+            BufferedOutputStream bos = new BufferedOutputStream(
+                    new FileOutputStream(outfile));
+            
+            JAI.create("encode", resizedImage, bos, "JPEG", null);
+        }  
 
     }
 	
 	/**
 	 * 
+	 * @param startSize
+	 * 			La taille du fichier original
+	 * @param finalSize
+	 * 			La taille du fichier final
+	 * @return le ratio à utiliser afin que le fichier une fois compressé soit de taille environ égale à finalSize
+	 */
+	private static double computeRatio(double startSize, double finalSize) {
+		return (-finalSize * Math.log10(startSize))/(-startSize - finalSize * Math.log10(startSize));
+	}
+
+	/**
+	 * Comperesse toutes les images se situant dans le dossier se trouvant à l'adresse en paramètre
 	 * @param location
 	 * L'adresse du dossier contenant les images à compresser
-	 * @param ratio
-	 * Le niveau de compression souhaité 
 	 */
-	public static void compressAll(String location, double ratio) {
+	public static void compressAll(String location) {
 		File repertoire = new File(location);
 		File[] files = repertoire.listFiles();
 		for (File file : files) {
 			try {
-				compress(file.getAbsolutePath(), ratio);
+				compress(file.getAbsolutePath());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

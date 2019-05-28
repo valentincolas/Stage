@@ -17,7 +17,7 @@ public class DAO {
 		
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			this.cn = DriverManager.getConnection("jdbc:mysql://localhost:3306/stage?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
+			this.cn = DriverManager.getConnection("jdbc:mysql://localhost:3306/bidon?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
 		} catch (ClassNotFoundException e) {
 			System.out.println("Driver introuvable");
 			e.printStackTrace();
@@ -38,7 +38,7 @@ public class DAO {
 
 	public boolean createSubstrats(Substrat s) {
 		try {
-			ps = cn.prepareStatement("insert into Substrats(reference, Nom, MS, MV, ratioMSMV, Phosphore, Potassium, AzoteK,  AzoteA, bpmMV,  bmpMF, pourcentageMethane,  detail, famille) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'ND' );");
+			ps = cn.prepareStatement("insert into Substrats(reference, Nom, MS, MV, ratioMSMV, Phosphore, Potassium, AzoteK,  AzoteA, bmpMV,  bmpMF, pourcentageMethane,  detail, famille) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'ND' );");
 			ps.setString(1, s.getReference());
 			ps.setString(2, s.getNom());
 			ps.setDouble(3, s.getMs());
